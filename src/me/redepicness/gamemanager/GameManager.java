@@ -1,6 +1,9 @@
 package me.redepicness.gamemanager;
 
+import me.redepicness.gamemanager.utilities.GuiInventory;
+import me.redepicness.gamemanager.utilities.ServerStatusManager;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
@@ -18,6 +21,16 @@ public class GameManager <T extends DefaultGameManager> extends JavaPlugin imple
     public void onEnable(){
         instance = this;
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+        getServer().getMessenger().registerIncomingPluginChannel(this, "BungeeCord", new ServerStatusManager());
+        ServerStatusManager.updateInit();
+        ServerStatusManager.createInventory("test", "Testing");
+    }
+
+    @Override
+    public void onDisable(){
+        gameManager.cleanup();
+        gameManager = null;
     }
 
     public static GameManager getInstance() {
@@ -29,6 +42,8 @@ public class GameManager <T extends DefaultGameManager> extends JavaPlugin imple
     }
 
     public T getGameManager(){
+        if(gameManager == null)
+            throw new RuntimeException("Plugin should provide it's own game manager that extends DefaultGameManager.java");
         return gameManager;
     }
 
@@ -41,12 +56,15 @@ public class GameManager <T extends DefaultGameManager> extends JavaPlugin imple
     public void sign(SignChangeEvent e){
         if(e.getLine(0).equals("ARENA")){
             gameManager.registerArena(e.getBlock());
-            e.setLine(1, "Setting up...");
+            e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onClick(PlayerInteractEvent e){
+        if(e.getItem() != null && e.getItem().getType().equals(Material.NETHER_STAR)){
+            e.getPlayer().openInventory(GuiInventory.forId("test").getInventory());
+        }
         if(e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && e.getClickedBlock().getType().toString().toLowerCase().contains("sign")){
             Arena arena = gameManager.getArenaFromSign(e.getClickedBlock());
             if(arena == null) return;
