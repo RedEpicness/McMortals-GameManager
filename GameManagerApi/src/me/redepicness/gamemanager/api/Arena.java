@@ -1,4 +1,4 @@
-package me.redepicness.gamemanager;
+package me.redepicness.gamemanager.api;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -12,19 +12,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class Arena{
+public abstract class Arena {
 
     private Location arenaSpawn;
     private ArrayList<String> players = new ArrayList<>();
-    /*private Game game;*/
     private Block sign;
     private int countdownTaskId = -1;
     private int countdownTime = -1;
     private Stage stage;
 
-    public Arena(/*Location arenaSpawn, Game game, */Block sign, Location arenaSpawn){
-        /*this.arenaSpawn = arenaSpawn;
-        this.game = game;*/
+    public Arena(Block sign, Location arenaSpawn){
         this.arenaSpawn = arenaSpawn;
         this.sign = sign;
         updateSign(0, getName());
@@ -47,7 +44,7 @@ public abstract class Arena{
         if(countdownTaskId != -1)
             throw new RuntimeException("You can only have one countdown running at the same time!");
         countdownTime = seconds;
-        countdownTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(GameManager.getInstance(), () -> {
+        countdownTaskId = Bukkit.getScheduler().scheduleSyncRepeatingTask(Manager.getPlugin("GameManager"), () -> {
             if(countdownTime == 0){
                 Bukkit.getScheduler().cancelTask(countdownTaskId);
                 countdownTaskId = -1;
@@ -108,7 +105,7 @@ public abstract class Arena{
         players.remove(player.getName());
         broadcast(player.getName()+" left the game!");
         updateSign(2, getPlayerCount() + "/" + getMaxPlayers());
-        player.teleport(GameManager.getInstance().getGameManager().getLobbyLocation());
+        player.teleport(Manager.getGameManager().getLobbyLocation());
     }
 
     public Sign getSign(){
@@ -129,6 +126,8 @@ public abstract class Arena{
             e.printStackTrace();
         }
     }
+
+    public abstract void disable();
 
     public Location getArenaSpawn() {
         return arenaSpawn;

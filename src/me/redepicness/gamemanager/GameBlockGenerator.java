@@ -1,5 +1,6 @@
 package me.redepicness.gamemanager;
 
+import me.redepicness.gamemanager.api.BlockGenerator;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -8,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class BlockGenerator {
+public class GameBlockGenerator implements BlockGenerator{
 
     public static final int BLOCKS_PER_TICK = 200;
 
@@ -16,8 +17,12 @@ public class BlockGenerator {
     private boolean isGenerated = false;
     private Runnable runnable = null;
 
-    public BlockGenerator(){
+    public GameBlockGenerator(){
         blocks = new HashMap<>();
+    }
+
+    public BlockGenerator newGenerator() {
+        return new GameBlockGenerator();
     }
 
     public void addBlock(Location location, Material material){
@@ -53,9 +58,9 @@ public class BlockGenerator {
         }
         scheduleBlocks(toPlace, delay);
         if(runnable != null){
-            Bukkit.getScheduler().scheduleSyncDelayedTask(GameManager.getInstance(), runnable::run, delay+20);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), runnable::run, delay+20);
         }
-        Bukkit.getScheduler().scheduleSyncDelayedTask(GameManager.getInstance(), postTask::run, delay+40);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), postTask::run, delay+40);
     }
 
 
@@ -65,7 +70,7 @@ public class BlockGenerator {
         for (Entry<Location, Material> e : map.entrySet()) {
             fin.put(e.getKey(), e.getValue());
         }
-        Bukkit.getScheduler().scheduleSyncDelayedTask(GameManager.getInstance(), () -> {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), () -> {
             for (Entry<Location, Material> e : fin.entrySet()) {
                 e.getKey().getBlock().setType(e.getValue());
             }

@@ -1,10 +1,11 @@
-package me.redepicness.gamemanager.utilities;
+package me.redepicness.gamemanager;
 
 import com.google.common.collect.Iterables;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import me.redepicness.gamemanager.GameManager;
+import me.redepicness.gamemanager.api.ServerStatusManager;
+import me.redepicness.gamemanager.api.Utility;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -15,25 +16,25 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class ServerStatusManager implements PluginMessageListener{
+public class GameServerStatusManager implements PluginMessageListener, ServerStatusManager{
 
     private static HashMap<String, Integer> serverList = null;
 
-    public static void createInventory(String id, String title, String... filters){
-        GuiInventory inventory = GuiInventory.generateNewInventory(id, title, 1);
+    public void createInventory(String id, String title, String... filters){
+        GameGuiInventory inventory = GameGuiInventory.generateNewInventory(id, title, 1);
         inventory.addItemStacks(
                 new int[]{0},
-                new ExecItemStack[]{
-                    new ExecItemStack(Utility.makeItemStack(Material.REDSTONE_BLOCK, 0, ChatColor.RED+"Loading servers..."), Player::closeInventory)
+                new GameExecItemStack[]{
+                    new GameExecItemStack(GameUtility.makeItemStack(Material.REDSTONE_BLOCK, 0, ChatColor.RED + "Loading servers..."), Player::closeInventory)
                 }
         );
         serverWait(id, filters);
     }
 
     public static void serverWait(String id, String... filters){
-        Bukkit.getScheduler().scheduleSyncDelayedTask(GameManager.getInstance(), () -> {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), () -> {
             if (serverList != null) {
-                GuiInventory inventory = GuiInventory.forId(id);
+                GameGuiInventory inventory = GameGuiInventory.forId(id);
                 ArrayList<String> servers = new ArrayList<>();
                 if (filters.length > 0) {
                     for (String name : serverList.keySet()) {
@@ -46,14 +47,14 @@ public class ServerStatusManager implements PluginMessageListener{
                     servers.addAll(serverList.keySet());
                 }
                 int[] positions = new int[servers.size()];
-                ExecItemStack[] stacks = new ExecItemStack[servers.size()];
+                GameExecItemStack[] stacks = new GameExecItemStack[servers.size()];
                 int index = 0;
                 for (String name : servers) {
-                    stacks[index] = new ExecItemStack(Utility.makeItemStack(Material.ENDER_PEARL, 0, ChatColor.RED + name), p -> {
+                    stacks[index] = new GameExecItemStack(Utility.makeItemStack(Material.ENDER_PEARL, 0, ChatColor.RED + name), p -> {
                         ByteArrayDataOutput out = ByteStreams.newDataOutput();
                         out.writeUTF("Connect");
                         out.writeUTF(name);
-                        p.sendPluginMessage(GameManager.getInstance(), "BungeeCord", out.toByteArray());
+                        p.sendPluginMessage(GManager.getInstance(), "BungeeCord", out.toByteArray());
                     });
                     positions[index] = index;
                     index++;
@@ -68,8 +69,8 @@ public class ServerStatusManager implements PluginMessageListener{
     }
 
     private static void inventoryUpdater(String id) {
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(GameManager.getInstance(), () -> {
-            GuiInventory inventory = GuiInventory.forId(id);
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(GManager.getInstance(), () -> {
+            GameGuiInventory inventory = GameGuiInventory.forId(id);
             inventory.updateStacks(stack -> {
                 ItemStack item = stack.getStack();
                 item.setAmount(serverList.get(ChatColor.stripColor(item.getItemMeta().getDisplayName())));
@@ -79,12 +80,12 @@ public class ServerStatusManager implements PluginMessageListener{
     }
 
     public static void updateInit(){
-        Bukkit.getScheduler().scheduleSyncDelayedTask(GameManager.getInstance(), () -> {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), () -> {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             out.writeUTF("GetServers");
             Player player = Iterables.getFirst(Bukkit.getOnlinePlayers(), null);
             if(player != null){
-                player.sendPluginMessage(GameManager.getInstance(), "BungeeCord", out.toByteArray());
+                player.sendPluginMessage(GManager.getInstance(), "BungeeCord", out.toByteArray());
             }
             else{
                 updateInit();
@@ -93,14 +94,14 @@ public class ServerStatusManager implements PluginMessageListener{
     }
 
     public void serverUpdater(){
-        Bukkit.getScheduler().scheduleSyncRepeatingTask(GameManager.getInstance(), () -> {
+        Bukkit.getScheduler().scheduleSyncRepeatingTask(GManager.getInstance(), () -> {
             Player player = Iterables.getFirst(Bukkit.getOnlinePlayers(), null);
             if (player != null)
                 for (String name : serverList.keySet()) {
                     ByteArrayDataOutput out = ByteStreams.newDataOutput();
                     out.writeUTF("PlayerCount");
                     out.writeUTF(name);
-                    player.sendPluginMessage(GameManager.getInstance(), "BungeeCord", out.toByteArray());
+                    player.sendPluginMessage(GManager.getInstance(), "BungeeCord", out.toByteArray());
                 }
         }, 20, 20);
     }

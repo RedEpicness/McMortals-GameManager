@@ -1,4 +1,4 @@
-main: me.redepicness.gamemanager.GameManager
+main: me.redepicness.gamemanager.Manager
 version: 1.0
 name: GameManager
 author: Red_Epicness
