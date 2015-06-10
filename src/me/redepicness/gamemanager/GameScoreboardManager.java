@@ -1,6 +1,7 @@
 package me.redepicness.gamemanager;
 
 import me.redepicness.gamemanager.api.Rank;
+import me.redepicness.gamemanager.api.ScoreboardManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
@@ -8,10 +9,10 @@ import org.bukkit.scoreboard.Team;
 
 import java.util.HashMap;
 
-public class GameScoreboardManager {
+public class GameScoreboardManager implements ScoreboardManager{
 
-    private static GameScoreboardManager manager;
-    private static volatile HashMap<String, Scoreboard> playerScoreboards;
+    /*private static GameScoreboardManager manager;
+
 
     public static void init(){
         manager = new GameScoreboardManager();
@@ -23,10 +24,12 @@ public class GameScoreboardManager {
 
     public static GameScoreboardManager getManager() {
         return manager;
-    }
+    }*/
 
     //Object methods
-
+    private volatile HashMap<String, Scoreboard> playerScoreboards;
+    private boolean staffTab = true;
+    private boolean local = false;
     private volatile Scoreboard staff;
     private volatile Scoreboard global;
 
@@ -43,7 +46,7 @@ public class GameScoreboardManager {
         }
     }
 
-    void updateStaff(){
+    public void updateStaff(){
         if(!staffInTab()) return;
         for(Player player : Bukkit.getOnlinePlayers()){
             GameCustomPlayer p = GameCustomPlayer.get(player.getName());
@@ -64,12 +67,22 @@ public class GameScoreboardManager {
         }
     }
 
+    @Override
+    public void setStaffInTab(boolean staffInTab) {
+        staffTab = staffInTab;
+    }
+
     public boolean staffInTab(){
-        return true;
+        return staffTab;
+    }
+
+    @Override
+    public void setLocalScoreboards(boolean localScoreboards) {
+        local = localScoreboards;
     }
 
     public boolean localScoreboards(){
-        return false;
+        return local;
     }
 
     public Scoreboard getScoreboard(){

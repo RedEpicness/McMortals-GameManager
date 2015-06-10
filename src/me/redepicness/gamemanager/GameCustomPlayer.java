@@ -1,6 +1,5 @@
 package me.redepicness.gamemanager;
 
-import me.redepicness.gamemanager.GameInfraction.InfractionType;
 import me.redepicness.gamemanager.api.CustomPlayer;
 import me.redepicness.gamemanager.api.Infraction;
 import me.redepicness.gamemanager.api.Rank;
@@ -142,7 +141,7 @@ public class GameCustomPlayer implements CustomPlayer{
         if(isConsole()) return null;
         if(infractions == null) getInfractions();
         assert infractions != null;
-        ArrayList<GameInfraction> inf = new ArrayList<>();
+        ArrayList<Infraction> inf = new ArrayList<>();
         infractions.stream().filter(i -> !i.isExpired() && i.getType().equals(type)).forEach(inf::add);
         return inf.size() == 0 ? null : inf.get(0);
     }

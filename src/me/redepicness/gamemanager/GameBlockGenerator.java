@@ -63,9 +63,7 @@ public class GameBlockGenerator implements BlockGenerator{
         Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), postTask::run, delay+40);
     }
 
-
-
-    public void scheduleBlocks(Map<Location, Material> map, int delay){
+    private void scheduleBlocks(Map<Location, Material> map, int delay){
         Map<Location, Material> fin = new HashMap<>();
         for (Entry<Location, Material> e : map.entrySet()) {
             fin.put(e.getKey(), e.getValue());

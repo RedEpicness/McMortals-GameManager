@@ -11,10 +11,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 
-import java.util.Collection;
 import java.util.HashMap;
 
-public class GameManager<A extends Arena> implements Listener {
+public abstract class GameManager<A extends Arena> implements Listener {
 
     public GameManager(){
         if(getType().equals(GameManagerType.MULTI_GAME))
@@ -44,8 +43,7 @@ public class GameManager<A extends Arena> implements Listener {
         return true;
     }
 
-    void cleanup() {
-        pluginCleanup();
+    public void cleanup() {
         if(getType().equals(GameManagerType.MULTI_GAME)){
             for(Block block : signToArena.keySet()){
                 signToArena.get(block).disable();
@@ -55,38 +53,30 @@ public class GameManager<A extends Arena> implements Listener {
         }
     }
 
-    A getArenaFromSign(Block sign) {
+    public A getArenaFromSign(Block sign) {
         return signToArena.getOrDefault(sign, null);
     }
 
-    void registerArena(Block sign) {
+    public void registerArena(Block sign) {
         if(getType().equals(GameManagerType.MULTI_GAME))
             signToArena.put(sign, getArena(sign));
         else
             throw new RuntimeException("Cannot register arena per sign if the manager is not MULTI_GAME");
     }
 
-    Collection<A> getArenas(){
+   /* Collection<A> getArenas(){
         return signToArena.values();
-    }
+    }*/
 
     //Public methods (to override)
 
-    public Location getLobbyLocation(){
-        return null;
-    }
+    public abstract Location getLobbyLocation();
 
-    public void playerJoin(Player player){}
+    public abstract void playerJoin(Player player);
 
-    public void pluginCleanup(){}
+    public abstract A getArena(Block sign);
 
-    public A getArena(Block sign){
-        return null;
-    }
-
-    public GameManagerType getType(){
-        return null;
-    }
+    public abstract GameManagerType getType();
 
     public enum GameManagerType{
 

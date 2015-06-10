@@ -4,7 +4,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.io.ByteArrayDataInput;
 import com.google.common.io.ByteArrayDataOutput;
 import com.google.common.io.ByteStreams;
-import me.redepicness.gamemanager.api.ServerStatusManager;
+import me.redepicness.gamemanager.api.GuiInventory;
 import me.redepicness.gamemanager.api.Utility;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -16,25 +16,14 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-public class GameServerStatusManager implements PluginMessageListener, ServerStatusManager{
+public class GameServerStatusManager implements PluginMessageListener {
 
     private static HashMap<String, Integer> serverList = null;
-
-    public void createInventory(String id, String title, String... filters){
-        GameGuiInventory inventory = GameGuiInventory.generateNewInventory(id, title, 1);
-        inventory.addItemStacks(
-                new int[]{0},
-                new GameExecItemStack[]{
-                    new GameExecItemStack(GameUtility.makeItemStack(Material.REDSTONE_BLOCK, 0, ChatColor.RED + "Loading servers..."), Player::closeInventory)
-                }
-        );
-        serverWait(id, filters);
-    }
 
     public static void serverWait(String id, String... filters){
         Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), () -> {
             if (serverList != null) {
-                GameGuiInventory inventory = GameGuiInventory.forId(id);
+                GuiInventory inventory = Utility.getGuiInvManager().forId(id);
                 ArrayList<String> servers = new ArrayList<>();
                 if (filters.length > 0) {
                     for (String name : serverList.keySet()) {
@@ -70,7 +59,7 @@ public class GameServerStatusManager implements PluginMessageListener, ServerSta
 
     private static void inventoryUpdater(String id) {
         Bukkit.getScheduler().scheduleSyncRepeatingTask(GManager.getInstance(), () -> {
-            GameGuiInventory inventory = GameGuiInventory.forId(id);
+            GuiInventory inventory = Utility.getGuiInvManager().forId(id);
             inventory.updateStacks(stack -> {
                 ItemStack item = stack.getStack();
                 item.setAmount(serverList.get(ChatColor.stripColor(item.getItemMeta().getDisplayName())));

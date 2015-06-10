@@ -10,14 +10,15 @@ import java.util.Arrays;
 
 public class Utility {
 
-    private static ServerStatusManager serverStatusManager = null;
+    private static GuiInventoryManager guiInventoryManager = null;
     private static BlockGenerator blockGenerator = null;
+    private static ScoreboardManager scoreboardManager = null;
 
-    public static void setServerStatusManager(ServerStatusManager server) {
-        if(serverStatusManager != null) {
-            throw new UnsupportedOperationException("Cannot re-set the status manager!");
+    public static void setGuiInventoryManager(GuiInventoryManager manager) {
+        if(guiInventoryManager != null) {
+            throw new UnsupportedOperationException("Cannot re-set the inventory manager!");
         } else {
-            serverStatusManager = server;
+            guiInventoryManager = manager;
         }
     }
 
@@ -29,12 +30,24 @@ public class Utility {
         }
     }
 
+    public static void setScoreboardManager(ScoreboardManager manager) {
+        if(scoreboardManager != null) {
+            throw new UnsupportedOperationException("Cannot re-set the scoreboard manager!");
+        } else {
+            scoreboardManager = manager;
+        }
+    }
+
     public static BlockGenerator getBlockGenerator(){
         return blockGenerator.newGenerator();
     }
 
-    public static void createInventory(String id, String title, String... filters){
-        serverStatusManager.createInventory(id, title, filters);
+    public static GuiInventoryManager getGuiInvManager(){
+        return guiInventoryManager;
+    }
+
+    public static ScoreboardManager getScoreboardManager() {
+        return scoreboardManager;
     }
 
     public static ItemStack makeItemStack(Material material, String displayName, String... lore){

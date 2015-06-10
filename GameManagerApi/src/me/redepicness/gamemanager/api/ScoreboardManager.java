@@ -4,11 +4,13 @@ import org.bukkit.scoreboard.Scoreboard;
 
 public interface ScoreboardManager {
 
+    void updateStaff();
+
     void setStaffInTab(boolean staffInTab);
 
     boolean staffInTab();
 
-    void setLocalScoreboards();
+    void setLocalScoreboards(boolean localScoreboards);
 
     boolean localScoreboards();
 

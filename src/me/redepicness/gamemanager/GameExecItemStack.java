@@ -1,11 +1,12 @@
 package me.redepicness.gamemanager;
 
+import me.redepicness.gamemanager.api.ExecItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.function.Consumer;
 
-public class GameExecItemStack {
+public class GameExecItemStack implements ExecItemStack{
 
     private ItemStack itemStack;
     private Consumer<Player> onExecute;
