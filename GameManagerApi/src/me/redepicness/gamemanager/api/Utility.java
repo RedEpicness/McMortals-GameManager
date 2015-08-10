@@ -3,6 +3,8 @@ package me.redepicness.gamemanager.api;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -10,32 +12,31 @@ import java.util.Arrays;
 
 public class Utility {
 
+    private static boolean set = false;
     private static GuiInventoryManager guiInventoryManager = null;
     private static BlockGenerator blockGenerator = null;
     private static ScoreboardManager scoreboardManager = null;
+    private static PlayerManager playerManager = null;
+    private static ServerStatus serverStatus = null;
+    private static CubeManager cubeManager = null;
 
-    public static void setGuiInventoryManager(GuiInventoryManager manager) {
-        if(guiInventoryManager != null) {
-            throw new UnsupportedOperationException("Cannot re-set the inventory manager!");
-        } else {
-            guiInventoryManager = manager;
-        }
+    public static void setManagers(PlayerManager pmanager, GuiInventoryManager guimanager, BlockGenerator generator, ScoreboardManager smanager, ServerStatus status, CubeManager cmanager){
+        if(set)
+            throw new UnsupportedOperationException("Cannot re-set the managers!");
+        playerManager = pmanager;
+        guiInventoryManager = guimanager;
+        blockGenerator = generator;
+        scoreboardManager = smanager;
+        serverStatus = status;
+        cubeManager = cmanager;
     }
 
-    public static void setBlockGenerator(BlockGenerator generator) {
-        if(blockGenerator != null) {
-            throw new UnsupportedOperationException("Cannot re-set the status manager!");
-        } else {
-            blockGenerator = generator;
-        }
+    public static void registerServerStatusListener(String forwardTarget, String filter){
+        serverStatus.registerStatusListener(forwardTarget, filter);
     }
 
-    public static void setScoreboardManager(ScoreboardManager manager) {
-        if(scoreboardManager != null) {
-            throw new UnsupportedOperationException("Cannot re-set the scoreboard manager!");
-        } else {
-            scoreboardManager = manager;
-        }
+    public static CubeManager getCubeManager() {
+        return cubeManager.getNewInstance();
     }
 
     public static BlockGenerator getBlockGenerator(){
@@ -48,6 +49,14 @@ public class Utility {
 
     public static ScoreboardManager getScoreboardManager() {
         return scoreboardManager;
+    }
+
+    public static CustomPlayer getPlayer(Player p){
+        return playerManager.get(p.getName());
+    }
+
+    public static CustomPlayer getPlayer(String name){
+        return playerManager.get(name);
     }
 
     public static ItemStack makeItemStack(Material material, String displayName, String... lore){
@@ -69,8 +78,16 @@ public class Utility {
         Bukkit.getConsoleSender().sendMessage(s);
     }
 
+    public static World getWorld(){
+        return Bukkit.getWorld("world");
+    }
+
     public static Location makeLocation(double x, double y, double z){
-        return new Location(Bukkit.getWorld("world"), x, y, z);
+        return new Location(getWorld(), x, y, z);
+    }
+
+    public static Location makeLocation(double x, double y, double z, float yaw, float pitch){
+        return new Location(getWorld(), x, y, z, yaw, pitch);
     }
 
 }

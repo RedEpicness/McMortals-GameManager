@@ -1,14 +1,13 @@
 package me.redepicness.gamemanager;
 
+import me.redepicness.gamemanager.api.CustomPlayer;
 import me.redepicness.gamemanager.api.Infraction;
+import me.redepicness.gamemanager.api.Utility;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
-/**
- * Created by Miha on 6/3/2015.
- */
 public class Database {
 
     private static Connection connection = null;
@@ -46,22 +45,19 @@ public class Database {
         }
     }
 
-    public static void insertInfraction(GameInfraction infraction){
+    public static void insertCubeTransaction(long time, String name, int amount, String reason){
         try{
             checkConnection();
-            PreparedStatement statement = connection.prepareStatement("INSERT INTO Infractions (Time, Offender, Issuer, Type, Reason, Duration) " +
-                    "VALUES (?, ?, ?, ?, ?, ?)");
-            statement.setLong(1, infraction.getWhen());
-            statement.setString(2, infraction.getOffender());
-            statement.setString(3, infraction.getIssuer());
-            statement.setString(4, infraction.getType().toString());
-            statement.setString(5, infraction.getReason());
-            statement.setInt(6, infraction.getDuration());
+            PreparedStatement statement = connection.prepareStatement("INSERT INTO CubeTransactions (Time, UUID, Amount, Reason) VALUES (?, ?, ?, ?)");
+            statement.setLong(1, time);
+            statement.setString(2, name);
+            statement.setInt(3, amount);
+            statement.setString(4, reason);
             statement.executeUpdate();
             statement.close();
         }
         catch (SQLException e){
-            throw new RuntimeException("Could not update infraction!", e);
+            throw new RuntimeException("Could not insert cube transaction!", e);
         }
     }
 
@@ -127,6 +123,8 @@ public class Database {
     public <T> T getPropertyForName(String username, String property){
         try{
             checkConnection();
+            CustomPlayer p = Utility.getPlayer(username);
+            if(p.isOnline()) return getPropertyForUUID(p.getBukkitPlayer().getUniqueId().toString(), property);
             PreparedStatement statement = connection.prepareStatement("SELECT * FROM "+tableName+" WHERE Name=?");
             statement.setString(1, username);
             ResultSet resultSet = statement.executeQuery();
@@ -147,6 +145,11 @@ public class Database {
     public <T> void updatePropertyForName(String username, String propertyName, T property){
         try{
             checkConnection();
+            CustomPlayer p = Utility.getPlayer(username);
+            if(p.isOnline()) {
+                updatePropertyForUUID(p.getBukkitPlayer().getUniqueId().toString(), propertyName, property);
+                return;
+            }
             PreparedStatement statement = connection.prepareStatement("UPDATE "+tableName+" SET "+propertyName+"=? WHERE Name=?");
             statement.setObject(1, property);
             statement.setString(2, username);
@@ -157,4 +160,52 @@ public class Database {
             throw new RuntimeException("Could not update "+propertyName+" to "+property+" for "+username+"!", e);
         }
     }
+
+    public <T> T getPropertyForUUID(String uuid, String property){
+        try{
+            checkConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM " + tableName + " WHERE UUID=?");
+            statement.setString(1, uuid);
+            ResultSet resultSet = statement.executeQuery();
+            if(!resultSet.isBeforeFirst()){
+                throw new IllegalArgumentException(uuid + " could not be found in the database!");
+            }
+            resultSet.first();
+            T object = (T) resultSet.getObject(property);
+            statement.close();
+            resultSet.close();
+            return object;
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not obtain "+property+" for "+uuid+"!", e);
+        }
+    }
+
+    public <T> void updatePropertyForUUID(String uuid, String propertyName, T property){
+        try{
+            checkConnection();
+            PreparedStatement statement = connection.prepareStatement("UPDATE "+tableName+" SET "+propertyName+"=? WHERE UUID=?");
+            statement.setObject(1, property);
+            statement.setString(2, uuid);
+            statement.executeUpdate();
+            statement.close();
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not update "+propertyName+" to "+property+" for "+uuid+"!", e);
+        }
+    }
+
+    public static boolean nameExistsInDatabase(String name){
+        try{
+            checkConnection();
+            PreparedStatement statement = connection.prepareStatement("SELECT * FROM PlayerData WHERE Name=?");
+            statement.setString(1, name);
+            ResultSet resultSet = statement.executeQuery();
+            return resultSet.isBeforeFirst();
+        }
+        catch (SQLException e){
+            throw new RuntimeException("Could not check for "+name+"!", e);
+        }
+    }
+
 }

@@ -2,19 +2,16 @@ package me.redepicness.gamemanager.api;
 
 import org.bukkit.ChatColor;
 
-/**
- * Created by Miha on 6/7/2015.
- */
 public enum Rank {
 
-    DEFAULT, BUILDER, HELPER, MODERATOR, JR_DEV, ADMIN;
+    DEFAULT, ACE, ALLSTAR, CUBER, BUILDER, YOUTUBER, JR_DEV, HELPER, MODERATOR, ADMIN;
 
     public boolean isStaffRank() {
-        return this == HELPER || this == MODERATOR || this == JR_DEV || this == ADMIN;
+        return this == HELPER || this == MODERATOR || this == ADMIN;
     }
 
     public boolean isPaidRank() {
-        return false;
+        return this == ACE || this == ALLSTAR || this == CUBER;
     }
 
     public static boolean isValid(String name){
@@ -28,54 +25,95 @@ public enum Rank {
 
     public ChatColor getColor(){
         switch (this){
+            case DEFAULT:
+                return ChatColor.WHITE;
+            case ACE:
+                return ChatColor.GOLD;
+            case ALLSTAR:
+                return ChatColor.AQUA;
+            case CUBER:
+                return ChatColor.DARK_PURPLE;
             case BUILDER:
                 return ChatColor.DARK_AQUA;
+            case YOUTUBER:
+                return ChatColor.LIGHT_PURPLE;
+            case JR_DEV:
+                return ChatColor.GREEN;
             case HELPER:
                 return ChatColor.BLUE;
             case MODERATOR:
                 return ChatColor.DARK_GREEN;
-            case JR_DEV:
-                return ChatColor.GREEN;
             case ADMIN:
                 return ChatColor.RED;
             default:
-                return ChatColor.WHITE;
+                throw new RuntimeException("unhandled enum!");
+        }
+    }
+
+    public String getName(){
+        switch (this){
+            case DEFAULT:
+                return "";
+            case ACE:
+                return "Ace";
+            case ALLSTAR:
+                return "AllStar";
+            case CUBER:
+                return "Cuber";
+            case BUILDER:
+                return "Builder";
+            case YOUTUBER:
+                return "Youtuber";
+            case JR_DEV:
+                return "Jr Dev";
+            case HELPER:
+                return "Helper";
+            case MODERATOR:
+                return "Mod";
+            case ADMIN:
+                return "Admin";
+            default:
+                throw new RuntimeException("unhandled enum!");
         }
     }
 
     public String asPrefix(boolean resetColor){
-        switch (this){
-            default:
-                return ChatColor.RESET+"";
-            case BUILDER:
-                return ChatColor.DARK_AQUA+"Builder "+(resetColor?ChatColor.RESET+"":"");
-            case HELPER:
-                return ChatColor.BLUE+"Helper "+(resetColor?ChatColor.RESET+"":"");
-            case MODERATOR:
-                return ChatColor.DARK_GREEN+"Mod "+(resetColor?ChatColor.RESET+"":"");
-            case JR_DEV:
-                return ChatColor.GREEN+"Jr Dev "+(resetColor?ChatColor.RESET+"":"");
-            case ADMIN:
-                return ChatColor.RED+"Admin "+(resetColor?ChatColor.RESET+"":"");
-        }
+        if(this.equals(DEFAULT)) return "";
+        return getColor()+getName()+" "+(resetColor?ChatColor.RESET+"":"");
     }
 
     public String withColors(){
+        return getColor()+this.toString()+ ChatColor.RESET;
+    }
+
+    public String getColoredName(){
+        return getColor()+getName()+ChatColor.RESET;
+    }
+
+    public int getPriority(){
         switch (this){
             case DEFAULT:
-                return ChatColor.WHITE+this.toString()+ChatColor.RESET;
+                return 0;
+            case ACE:
+                return 1;
+            case ALLSTAR:
+                return 2;
+            case CUBER:
+                return 3;
             case BUILDER:
-                return ChatColor.DARK_AQUA+this.toString()+ChatColor.RESET;
-            case HELPER:
-                return ChatColor.BLUE+this.toString()+ChatColor.RESET;
-            case MODERATOR:
-                return ChatColor.DARK_GREEN+this.toString()+ChatColor.RESET;
+                return 4;
+            case YOUTUBER:
+                return 6;
             case JR_DEV:
-                return ChatColor.GREEN+this.toString()+ChatColor.RESET;
+                return 5;
+            case HELPER:
+                return 7;
+            case MODERATOR:
+                return 8;
             case ADMIN:
-                return ChatColor.RED+this.toString()+ChatColor.RESET;
+                return 9;
             default:
-                return this.toString();
+                throw new RuntimeException("unhandled enum!");
         }
     }
 

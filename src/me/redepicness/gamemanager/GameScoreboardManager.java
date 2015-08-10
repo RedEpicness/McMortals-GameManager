@@ -1,7 +1,9 @@
 package me.redepicness.gamemanager;
 
+import me.redepicness.gamemanager.api.CustomPlayer;
 import me.redepicness.gamemanager.api.Rank;
 import me.redepicness.gamemanager.api.ScoreboardManager;
+import me.redepicness.gamemanager.api.Utility;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
@@ -49,7 +51,7 @@ public class GameScoreboardManager implements ScoreboardManager{
     public void updateStaff(){
         if(!staffInTab()) return;
         for(Player player : Bukkit.getOnlinePlayers()){
-            GameCustomPlayer p = GameCustomPlayer.get(player.getName());
+            CustomPlayer p = Utility.getPlayer(player.getName());
             if(p.getDominantRank().equals(Rank.DEFAULT)) continue;
             Team team = staff.getTeam(p.getDominantRank().toString().toLowerCase());
             if(staff.getPlayerTeam(player) != null && staff.getPlayerTeam(player).equals(team)){
@@ -79,6 +81,8 @@ public class GameScoreboardManager implements ScoreboardManager{
     @Override
     public void setLocalScoreboards(boolean localScoreboards) {
         local = localScoreboards;
+        if(!localScoreboards()) global = Bukkit.getScoreboardManager().getNewScoreboard();
+        else playerScoreboards = new HashMap<>();
     }
 
     public boolean localScoreboards(){

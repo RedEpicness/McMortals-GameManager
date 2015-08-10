@@ -51,10 +51,8 @@ public class GameBlockGenerator implements BlockGenerator{
                 delay++;
                 amount = BLOCKS_PER_TICK;
             }
-            if(!entry.getValue().equals(Material.AIR)){
-                toPlace.put(entry.getKey(), entry.getValue());
-                amount--;
-            }
+            toPlace.put(entry.getKey(), entry.getValue());
+            amount--;
         }
         scheduleBlocks(toPlace, delay);
         if(runnable != null){

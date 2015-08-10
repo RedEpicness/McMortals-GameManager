@@ -22,6 +22,16 @@ public interface CustomPlayer {
 
     Rank getDominantRank();
 
+    int getCubes();
+
+    boolean hasEnoughCubes(int amount);
+
+    void incrementCubes(int amount);
+
+    void decrementCubes(int amount);
+
+    void connectToServer(String serverName);
+
     Infraction getActiveInfraction(InfractionType type);
 
     Collection<Infraction> getInfractions();
@@ -40,13 +50,17 @@ public interface CustomPlayer {
 
     boolean hasPermission(boolean inform, Rank... rankList);
 
+    boolean isVanished();
+
+    boolean isFlying();
+
     void message(String... message);
 
-    String getLastMessage();
+    Player getBukkitPlayer();
 
-    boolean hasLastMessage();
+    String getUpgradeString(String game);
 
-    Player getPlayer();
+    void setUpgradeString(String game, String upgrade);
 
     boolean isOnline();
 

@@ -12,11 +12,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class Arena {
+public abstract class Game {
 
     private Location arenaSpawn;
     private ArrayList<String> players = new ArrayList<>();
-    private Block sign;
     private int countdownTaskId = -1;
     private int countdownTime = -1;
     private Stage stage;
@@ -24,19 +23,18 @@ public abstract class Arena {
     /**
      * Constructor for Arena
      *
-     * @param sign - The Block to be tied to this arena (must be a Sign)
      * @param arenaSpawn - The spawnpoint of this Arena
      */
-    public Arena(Block sign, Location arenaSpawn){
+    public Game(Location arenaSpawn){
+        if(Manager.isNoManagerMode())
+            throw new RuntimeException("Cannot make Arena object in no GameManager mode!");
         this.arenaSpawn = arenaSpawn;
-        this.sign = sign;
-        updateSign(0, getName());
     }
 
     @EventHandler
     public void onLeave(PlayerQuitEvent e){
         if(players.contains(e.getPlayer().getName()))
-            leave(e.getPlayer());
+            gameLeave(e.getPlayer());
     }
 
     /**
@@ -109,7 +107,6 @@ public abstract class Arena {
                 }
                 broadcast(msg);
             }
-            updateSign(3, countdownTime+"");
             countdownTime--;
         }, 20, 20);
     }
@@ -141,6 +138,10 @@ public abstract class Arena {
         return stage.equals(Stage.WAITING_FOR_PLAYERS);
     }
 
+    public String cannotJoinReason(){
+        return "The game is currently Running!";
+    }
+
     /**
      * Check if the specified player is in this arena.
      *
@@ -152,26 +153,19 @@ public abstract class Arena {
         return players.contains(name);
     }
 
-    public void join(Player player){
-        broadcast(player.getName()+" joined the game!");
+    public abstract void join(Player player);
+
+    public void gameJoin(Player player){
         players.add(player.getName());
-        updateSign(2, getPlayerCount() + "/" + getMaxPlayers());
+        join(player);
+
     }
 
-    public void leave(Player player){
+    public abstract void leave(Player player);
+
+    public void gameLeave(Player player){
         players.remove(player.getName());
-        broadcast(player.getName()+" left the game!");
-        updateSign(2, getPlayerCount() + "/" + getMaxPlayers());
-        player.teleport(Manager.getGameManager().getLobbyLocation());
-    }
-
-    /**
-     * Returns the sign this arena is tied to.
-     *
-     * @return The Sign of this arena
-     */
-    public Sign getSign(){
-        return (Sign) sign.getState();
+        leave(player);
     }
 
     /**
@@ -188,22 +182,6 @@ public abstract class Arena {
      */
     public abstract String getName();
 
-    /**
-     * Updates a line on the sign tied to this arena.
-     *
-     * @param line - The line number to update (0-3)
-     * @param message - Message to display on the line
-     */
-    public void updateSign(int line, String message){
-        Sign s = getSign();
-        s.setLine(line, message);
-        try{
-            s.update();
-        }
-        catch (Exception e){
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Needs to be overridden, called when the GameManager disables the Arena, should be used to clean up.
@@ -235,29 +213,6 @@ public abstract class Arena {
      */
     public void setStage(Stage stage) {
         this.stage = stage;
-        switch(stage){
-            case STARTING_UP:
-                updateSign(1, "Starting up");
-                break;
-            case GENERATING:
-                updateSign(1, "Generating");
-                break;
-            case WAITING_FOR_PLAYERS:
-                updateSign(1, "Join");
-                break;
-            case COUNTDOWN:
-                updateSign(1, "Started");
-                break;
-            case RUNNING:
-                updateSign(1, "Running");
-                break;
-            case FINISHED:
-                updateSign(1, "Finished");
-                break;
-            case CLEANUP:
-                updateSign(1, "Cleaning up");
-                break;
-        }
     }
 
     /**
@@ -265,7 +220,30 @@ public abstract class Arena {
      */
     public enum Stage {
 
-        STARTING_UP, CUSTOMIZING, GENERATING, WAITING_FOR_PLAYERS, COUNTDOWN, RUNNING, FINISHED, CLEANUP
+        STARTING_UP, CUSTOMIZING, GENERATING, WAITING_FOR_PLAYERS, COUNTDOWN, RUNNING, FINISHED, CLEANUP;
+
+        public String toText(){
+            switch(this){
+                case STARTING_UP:
+                    return "Starting up";
+                case CUSTOMIZING:
+                    return "Customizing";
+                case GENERATING:
+                    return "Generating";
+                case WAITING_FOR_PLAYERS:
+                    return "Join";
+                case COUNTDOWN:
+                    return "Started";
+                case RUNNING:
+                    return "Running";
+                case FINISHED:
+                    return "Finished";
+                case CLEANUP:
+                    return "Cleaning up";
+                default:
+                    return null;
+            }
+        }
 
     }
 

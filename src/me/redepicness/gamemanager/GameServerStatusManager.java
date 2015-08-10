@@ -18,9 +18,11 @@ import java.util.HashMap;
 
 public class GameServerStatusManager implements PluginMessageListener {
 
+    private static boolean init = false;
     private static HashMap<String, Integer> serverList = null;
 
     public static void serverWait(String id, String... filters){
+        if(!init) init();
         Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), () -> {
             if (serverList != null) {
                 GuiInventory inventory = Utility.getGuiInvManager().forId(id);
@@ -39,12 +41,7 @@ public class GameServerStatusManager implements PluginMessageListener {
                 GameExecItemStack[] stacks = new GameExecItemStack[servers.size()];
                 int index = 0;
                 for (String name : servers) {
-                    stacks[index] = new GameExecItemStack(Utility.makeItemStack(Material.ENDER_PEARL, 0, ChatColor.RED + name), p -> {
-                        ByteArrayDataOutput out = ByteStreams.newDataOutput();
-                        out.writeUTF("Connect");
-                        out.writeUTF(name);
-                        p.sendPluginMessage(GManager.getInstance(), "BungeeCord", out.toByteArray());
-                    });
+                    stacks[index] = new GameExecItemStack(Utility.makeItemStack(Material.ENDER_PEARL, 0, ChatColor.RED + name), p -> Connector.connect(p, name));
                     positions[index] = index;
                     index++;
                 }
@@ -66,6 +63,12 @@ public class GameServerStatusManager implements PluginMessageListener {
                 stack.setStack(item);
             });
         }, 20, 20);
+    }
+
+    public static void init(){
+        init = true;
+        Bukkit.getMessenger().registerIncomingPluginChannel(GManager.getInstance(), "BungeeCord", new GameServerStatusManager());
+        updateInit();
     }
 
     public static void updateInit(){

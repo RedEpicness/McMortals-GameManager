@@ -2,3 +2,6 @@ main: me.redepicness.gamemanager.GManager
 version: 1.0
 name: GameManager
 author: Red_Epicness
+commands:
+  v:
+  fly:

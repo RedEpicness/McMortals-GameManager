@@ -3,51 +3,16 @@ package me.redepicness.gamemanager;
 import me.redepicness.gamemanager.api.CustomPlayer;
 import me.redepicness.gamemanager.api.Infraction;
 import me.redepicness.gamemanager.api.Rank;
-import me.redepicness.gamemanager.api.Utility;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 
 public class GameCustomPlayer implements CustomPlayer{
 
-    private static Map<String, GameCustomPlayer> cachedData = new HashMap<>();
-
-    public static void init(){
-        Bukkit.getScheduler().scheduleAsyncRepeatingTask(GManager.getInstance(), GameCustomPlayer::checkCachedData, 5 * 60 * 20, 5 * 60 * 20);
-    }
-
-    public static GameCustomPlayer get(String name){
-        if(cachedData.containsKey(name)) return cachedData.get(name);
-        GameCustomPlayer player = new GameCustomPlayer(name);
-        if(!player.exists() || !player.isOnline()){
-            return player;
-        }
-        cachedData.put(name, player);
-        Utility.log(ChatColor.GREEN + "Loaded data for " + player.getFormattedName() + ChatColor.GREEN + " Ranks: " + player.getRanks());
-        return player;
-    }
-
-    public static void uncache(String name){
-        cachedData.remove(name);
-    }
-
-    private static void checkCachedData(){
-        Utility.log(ChatColor.RED + "Checking cached data!");
-        cachedData.values().stream().forEach(player -> {
-            if(!player.isOnline()){
-                cachedData.remove(player.getName());
-                Utility.log(player.getFormattedName() + ChatColor.RED + " not online, removing data!");
-            }
-        });
-        Bukkit.getOnlinePlayers().stream().filter(p -> !cachedData.containsKey(p.getName())).forEach(p -> {
-            GameCustomPlayer player = new GameCustomPlayer(p.getName());
-            cachedData.put(p.getName(), player);
-        });
-    }
-
-    private String lastMessage = null;
     private String name;
     private ArrayList<Rank> ranks = null;
     private ArrayList<String> friends = null;
@@ -55,8 +20,9 @@ public class GameCustomPlayer implements CustomPlayer{
     private Collection<Infraction> infractions = null;
     private long lastLogin = -1;
     private long firstLogin = -1;
+    private int cubes = -1;
 
-    private GameCustomPlayer(String name){
+    GameCustomPlayer(String name){
         this.name = name;
     }
 
@@ -84,57 +50,61 @@ public class GameCustomPlayer implements CustomPlayer{
         return lastLogin;
     }
 
-    public void updateLastLogin(){
-        Database.getTable("PlayerData").updatePropertyForName(name, "LastLogin", Calendar.getInstance().getTimeInMillis());
-    }
-
     public String getFormattedName(){
         if(isConsole()) return ChatColor.GRAY+name;
-        if(hasRank(Rank.ADMIN))
-            return ChatColor.RED+"Admin "+name+ ChatColor.RESET;
-        if(hasRank(Rank.MODERATOR))
-            return ChatColor.DARK_GREEN+"Mod "+name+ ChatColor.RESET;
-        if(hasRank(Rank.HELPER))
-            return ChatColor.BLUE+"Helper "+name+ ChatColor.RESET;
-        if(hasRank(Rank.JR_DEV))
-            return ChatColor.GREEN+"Jr Dev "+name+ ChatColor.RESET;
-        if(hasRank(Rank.BUILDER))
-            return ChatColor.DARK_AQUA+"Builder "+name+ ChatColor.RESET;
-        return name;
+        return getDominantRank().asPrefix(false)+name+ ChatColor.RESET;
     }
 
     public String getColoredName(){
         if(isConsole()) return ChatColor.GRAY+name;
-        if(hasRank(Rank.ADMIN))
-            return ChatColor.RED+name+ ChatColor.RESET;
-        if(hasRank(Rank.MODERATOR))
-            return ChatColor.DARK_GREEN+name+ ChatColor.RESET;
-        if(hasRank(Rank.HELPER))
-            return ChatColor.BLUE+name+ ChatColor.RESET;
-        if(hasRank(Rank.JR_DEV))
-            return ChatColor.GREEN+name+ ChatColor.RESET;
-        if(hasRank(Rank.BUILDER))
-            return ChatColor.DARK_AQUA+name+ ChatColor.RESET;
-        return name;
+        return getDominantRank().getColor()+name+ ChatColor.RESET;
     }
 
     public Rank getDominantRank(){
         if(isConsole()) return Rank.ADMIN;
-        if(hasRank(Rank.ADMIN))
-            return Rank.ADMIN;
-        if(hasRank(Rank.MODERATOR))
-            return Rank.MODERATOR;
-        if(hasRank(Rank.HELPER))
-            return Rank.HELPER;
-        if(hasRank(Rank.JR_DEV))
-            return Rank.JR_DEV;
-        if(hasRank(Rank.BUILDER))
-            return Rank.BUILDER;
-        return Rank.DEFAULT;
+        Rank dominant = Rank.DEFAULT;
+        for(Rank rank : getRanks()){
+            if(rank.getPriority() > dominant.getPriority()){
+                dominant = rank;
+            }
+        }
+        return dominant;
     }
 
-    public void updateInfractions(){
-        getInfractions();
+    public void incrementCubes(int amount){
+        int newAmount = getCubes() + amount;
+        setCubes(newAmount);
+    }
+
+    public void decrementCubes(int amount){
+        int newAmount = getCubes() - amount;
+        setCubes(newAmount);
+    }
+
+    public void setCubes(int amount){
+        if(amount < 0) amount = 0;
+        Database.getTable("PlayerData").updatePropertyForName(name, "Cubes", amount);
+        cubes = amount;
+    }
+
+    public int getCubes(){
+        if(isConsole()) return Integer.MAX_VALUE;
+        if(cubes != -1) return cubes;
+        cubes = Database.getTable("PlayerData").getPropertyForName(name, "Cubes");
+        return cubes;
+    }
+
+    public boolean hasEnoughCubes(int amount){
+        return getCubes() > amount;
+    }
+
+    @Override
+    public void connectToServer(String serverName) {
+        if(isOnline()){
+            Connector.connect(getBukkitPlayer(), serverName);
+        }
+        else
+            throw new RuntimeException("Tried to connect offline player!");
     }
 
     public Infraction getActiveInfraction(Infraction.InfractionType type){
@@ -153,21 +123,6 @@ public class GameCustomPlayer implements CustomPlayer{
         return infractions;
     }
 
-    public void removeFriend(String username){
-        if(friends == null) getFriends();
-        assert friends != null;
-        friends.remove(username);
-        if(friends.isEmpty()){
-            Database.getTable("PlayerData").updatePropertyForName(name, "Friends", null);
-            return;
-        }
-        String fString = "";
-        for(String s : friends){
-            fString += ":"+s;
-        }
-        Database.getTable("PlayerData").updatePropertyForName(name, "Friends", fString.substring(1));
-    }
-
     public boolean hasFriend(String username){
         if(isConsole()) return true;
         if(!exists()) throw new RuntimeException("User does not exist, proxy didnt create one??!");
@@ -184,59 +139,6 @@ public class GameCustomPlayer implements CustomPlayer{
         friends = new ArrayList<>();
         if(result != null) Collections.addAll(friends, result.split(":"));
         return friends;
-    }
-
-    public void requestFriend(String username){
-        if(friendRequests == null) getFriendRequests();
-        assert friendRequests != null;
-        friendRequests.add(username);
-        String fString = "";
-        for(String s : friendRequests){
-            fString += ":"+s;
-        }
-        Database.getTable("PlayerData").updatePropertyForName(name, "FRequests", fString.substring(1));
-    }
-
-    public void acceptRequest(String username){
-        if(friends == null) getFriends();
-        assert friends != null;
-        friends.add(username);
-        String fString = "";
-        for(String s : friends){
-            fString += ":"+s;
-        }
-        Database.getTable("PlayerData").updatePropertyForName(name, "Friends", fString.substring(1));
-
-        //Very hack, much legit, such genius (it's an ugly hack but it should work :D)
-        GameCustomPlayer player = new GameCustomPlayer(username);
-        if(!player.hasFriend(name)){
-            player.requestFriend(name);
-            player.acceptRequest(name);
-        }
-        removeRequest(username);
-    }
-
-    public void removeRequest(String username){
-        if(friendRequests == null) getFriendRequests();
-        assert friendRequests != null;
-        friendRequests.remove(username);
-        if(friendRequests.isEmpty()){
-            Database.getTable("PlayerData").updatePropertyForName(name, "FRequests", null);
-            return;
-        }
-        String fString = "";
-        for(String s : friendRequests){
-            fString += ":"+s;
-        }
-        Database.getTable("PlayerData").updatePropertyForName(name, "FRequests", fString.substring(1));
-    }
-
-    public boolean hasFRequestFrom(String username){
-        if(isConsole()) return true;
-        if(!exists()) throw new RuntimeException("User does not exist, proxy didnt create one??!");
-        if(friendRequests == null) getFriendRequests();
-        assert friendRequests != null;
-        return friendRequests.contains(username);
     }
 
     public ArrayList<String> getFriendRequests(){
@@ -272,22 +174,6 @@ public class GameCustomPlayer implements CustomPlayer{
             ranks.add(Rank.valueOf(r.toUpperCase()));
         }
         return ranks;
-    }
-
-    public void addRank(Rank rank){
-        ranks.add(rank);
-        if(ranks.contains(Rank.DEFAULT)) ranks.remove(Rank.DEFAULT);
-        Database.getTable("PlayerData").updatePropertyForName(name, "Ranks", getRankString());
-    }
-
-    public void removeRank(Rank rank){
-        ranks.remove(rank);
-        if(ranks.isEmpty()){
-            ranks.add(Rank.DEFAULT);
-            Database.getTable("PlayerData").updatePropertyForName(name, "Ranks", null);
-            return;
-        }
-        Database.getTable("PlayerData").updatePropertyForName(name, "Ranks", getRankString());
     }
 
     private String getRankString(){
@@ -327,21 +213,43 @@ public class GameCustomPlayer implements CustomPlayer{
             case DEFAULT:
                 pass = true;
                 break;
+            case ACE:
+                pass = ranks.contains(Rank.ACE) || ranks.contains(Rank.ALLSTAR) || ranks.contains(Rank.CUBER);
+                break;
+            case ALLSTAR:
+                pass = ranks.contains(Rank.ALLSTAR) || ranks.contains(Rank.CUBER);
+                break;
+            case CUBER:
+                pass = ranks.contains(Rank.CUBER);
+                break;
             case BUILDER:
                 pass = ranks.contains(Rank.BUILDER);
                 break;
-            case HELPER:
-                pass = ranks.contains(Rank.HELPER) || ranks.contains(Rank.MODERATOR) || ranks.contains(Rank.JR_DEV);
-                break;
-            case MODERATOR:
-                pass = ranks.contains(Rank.MODERATOR) || ranks.contains(Rank.JR_DEV);
+            case YOUTUBER:
+                pass = ranks.contains(Rank.YOUTUBER);
                 break;
             case JR_DEV:
                 pass = ranks.contains(Rank.JR_DEV);
                 break;
+            case HELPER:
+                pass = ranks.contains(Rank.HELPER) || ranks.contains(Rank.MODERATOR);
+                break;
+            case MODERATOR:
+                pass = ranks.contains(Rank.MODERATOR);
+                break;
         }
         if(inform && !pass) noPermission();
         return pass;
+    }
+
+    @Override
+    public boolean isVanished() {
+        return Database.getTable("PlayerData").getPropertyForName(name, "Vanished");
+    }
+
+    @Override
+    public boolean isFlying() {
+        return Database.getTable("PlayerData").getPropertyForName(name, "Flying");
     }
 
     public void message(String... message){
@@ -349,39 +257,31 @@ public class GameCustomPlayer implements CustomPlayer{
             Bukkit.getConsoleSender().sendMessage(message);
             return;
         }
-        getPlayer().sendMessage(message);
+        getBukkitPlayer().sendMessage(message);
     }
 
-    public void setLastMessage(String username){
-        lastMessage = username;
-    }
-
-    public String getLastMessage(){
-        return lastMessage;
-    }
-
-    public boolean hasLastMessage(){
-        return lastMessage != null;
-    }
-
-    public Player getPlayer(){
+    public Player getBukkitPlayer(){
         if(isConsole()) return null;
         return Bukkit.getPlayerExact(name);
     }
 
+    @Override
+    public String getUpgradeString(String game) {
+        return Database.getTable("PlayerUpgrades").getPropertyForName(name, game);
+    }
+
+    @Override
+    public void setUpgradeString(String game, String upgrade) {
+        Database.getTable("PlayerUpgrades").updatePropertyForName(name, game, upgrade);
+    }
+
     public boolean isOnline(){
-        return getPlayer() != null;
+        return getBukkitPlayer() != null;
     }
 
     public boolean exists() {
         if(isConsole()) return true;
-        try{
-            Database.getTable("PlayerData").getPropertyForName(name, "Name");
-        }
-        catch(IllegalArgumentException e){
-            return false;
-        }
-        return true;
+        return Database.nameExistsInDatabase(name);
     }
 
     private void noPermission() {
