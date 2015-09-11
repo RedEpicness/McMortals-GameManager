@@ -4,7 +4,7 @@ import org.bukkit.ChatColor;
 
 public enum Rank {
 
-    DEFAULT, ACE, ALLSTAR, CUBER, BUILDER, YOUTUBER, JR_DEV, HELPER, MODERATOR, ADMIN;
+    DEFAULT, ACE, ALLSTAR, CUBER, SURREAL, BUILDER, YOUTUBER, JR_DEV, HELPER, MODERATOR, ADMIN;
 
     public boolean isStaffRank() {
         return this == HELPER || this == MODERATOR || this == ADMIN;
@@ -33,6 +33,8 @@ public enum Rank {
                 return ChatColor.AQUA;
             case CUBER:
                 return ChatColor.DARK_PURPLE;
+            case SURREAL:
+                return ChatColor.YELLOW;
             case BUILDER:
                 return ChatColor.DARK_AQUA;
             case YOUTUBER:
@@ -60,6 +62,8 @@ public enum Rank {
                 return "AllStar";
             case CUBER:
                 return "Cuber";
+            case SURREAL:
+                return "Surreal";
             case BUILDER:
                 return "Builder";
             case YOUTUBER:
@@ -100,18 +104,20 @@ public enum Rank {
                 return 2;
             case CUBER:
                 return 3;
-            case BUILDER:
+            case SURREAL:
                 return 4;
-            case YOUTUBER:
-                return 6;
-            case JR_DEV:
+            case BUILDER:
                 return 5;
-            case HELPER:
+            case YOUTUBER:
                 return 7;
-            case MODERATOR:
+            case JR_DEV:
+                return 6;
+            case HELPER:
                 return 8;
-            case ADMIN:
+            case MODERATOR:
                 return 9;
+            case ADMIN:
+                return 10;
             default:
                 throw new RuntimeException("unhandled enum!");
         }

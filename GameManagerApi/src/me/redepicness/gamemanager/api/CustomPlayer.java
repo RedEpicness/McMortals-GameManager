@@ -62,6 +62,10 @@ public interface CustomPlayer {
 
     void setUpgradeString(String game, String upgrade);
 
+    String getSelectedGadget();
+
+    void setSelectedGadget(String gadget);
+
     boolean isOnline();
 
     boolean exists();

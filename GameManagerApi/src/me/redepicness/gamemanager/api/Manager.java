@@ -1,6 +1,8 @@
 package me.redepicness.gamemanager.api;
 
+import me.redepicness.gamemanager.api.GameManager.GameManagerType;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.Plugin;
 
@@ -24,6 +26,24 @@ public class Manager {
         if(noManagerMode)
             throw new RuntimeException("This server is running in no GameManager mode!");
         return gameManager;
+    }
+
+    public static boolean isType(GameManagerType type){
+        if(noManagerMode)
+            throw new RuntimeException("This server is running in no GameManager mode!");
+        return gameManager.getType().equals(type);
+    }
+
+    public static Game getGame(){
+        if(noManagerMode)
+            throw new RuntimeException("This server is running in no GameManager mode!");
+        return gameManager.getGame();
+    }
+
+    public static Location getLobbyLoc(){
+        if(noManagerMode)
+            throw new RuntimeException("This server is running in no GameManager mode!");
+        return gameManager.getLobbyLocation();
     }
 
     public static Plugin getPlugin(String plugin) {

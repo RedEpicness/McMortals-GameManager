@@ -45,7 +45,7 @@ public class GCubeManager implements CubeManager{
         int multiplier = 1;
         String name = "";
         for(String p : Manager.getGameManager().getGame().getPlayers()){
-            CustomPlayer pl = Utility.getPlayer(p);
+            CustomPlayer pl = Util.getPlayer(p);
             if(pl.hasPermission(Rank.CUBER)){
                 name = p;
                 multiplier = 4;
@@ -63,7 +63,6 @@ public class GCubeManager implements CubeManager{
         amount *= multiplier;
         transactions.add(new CubeTransaction(player.getUniqueId().toString(), amount, reason));
         player.sendMessage(ChatColor.DARK_PURPLE+"You recieved "+amount+" cubes!"+(name.equals("")?"":" ("+name+"'s multiplier ("+multiplier+"x))"));
-        //TODO check for multiplier
     }
 
     @Override
@@ -77,11 +76,9 @@ public class GCubeManager implements CubeManager{
         finished = true;
         for(CubeTransaction transaction : transactions){
             Database.insertCubeTransaction(transaction.getTime(), transaction.getUuid(), transaction.getAmount(), transaction.getReason());
-            GameCustomPlayer player = (GameCustomPlayer)Utility.getPlayer(Bukkit.getPlayer(UUID.fromString(transaction.getUuid())));
+            GameCustomPlayer player = (GameCustomPlayer)Util.getPlayer(Bukkit.getPlayer(UUID.fromString(transaction.getUuid())));
             player.incrementCubes(transaction.getAmount());
         }
-        //TODO LOG ALL TRANSACTIONS
-        //TODO AND PUSH TO DB!
     }
 
     private class CubeTransaction {

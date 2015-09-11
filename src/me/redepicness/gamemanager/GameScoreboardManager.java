@@ -3,7 +3,7 @@ package me.redepicness.gamemanager;
 import me.redepicness.gamemanager.api.CustomPlayer;
 import me.redepicness.gamemanager.api.Rank;
 import me.redepicness.gamemanager.api.ScoreboardManager;
-import me.redepicness.gamemanager.api.Utility;
+import me.redepicness.gamemanager.api.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.Scoreboard;
@@ -13,22 +13,6 @@ import java.util.HashMap;
 
 public class GameScoreboardManager implements ScoreboardManager{
 
-    /*private static GameScoreboardManager manager;
-
-
-    public static void init(){
-        manager = new GameScoreboardManager();
-    }
-
-    public static <T extends GameScoreboardManager> void setManager(T scoreboardManager){
-        manager = scoreboardManager;
-    }
-
-    public static GameScoreboardManager getManager() {
-        return manager;
-    }*/
-
-    //Object methods
     private volatile HashMap<String, Scoreboard> playerScoreboards;
     private boolean staffTab = true;
     private boolean local = false;
@@ -51,7 +35,7 @@ public class GameScoreboardManager implements ScoreboardManager{
     public void updateStaff(){
         if(!staffInTab()) return;
         for(Player player : Bukkit.getOnlinePlayers()){
-            CustomPlayer p = Utility.getPlayer(player.getName());
+            CustomPlayer p = Util.getPlayer(player.getName());
             if(p.getDominantRank().equals(Rank.DEFAULT)) continue;
             Team team = staff.getTeam(p.getDominantRank().toString().toLowerCase());
             if(staff.getPlayerTeam(player) != null && staff.getPlayerTeam(player).equals(team)){

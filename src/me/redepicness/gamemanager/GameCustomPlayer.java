@@ -1,7 +1,10 @@
 package me.redepicness.gamemanager;
 
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 import me.redepicness.gamemanager.api.CustomPlayer;
 import me.redepicness.gamemanager.api.Infraction;
+import me.redepicness.gamemanager.api.Manager;
 import me.redepicness.gamemanager.api.Rank;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
@@ -101,7 +104,10 @@ public class GameCustomPlayer implements CustomPlayer{
     @Override
     public void connectToServer(String serverName) {
         if(isOnline()){
-            Connector.connect(getBukkitPlayer(), serverName);
+            ByteArrayDataOutput out = ByteStreams.newDataOutput();
+            out.writeUTF("Connect");
+            out.writeUTF(serverName);
+            getBukkitPlayer().sendPluginMessage(Manager.getPlugin("GameManager"), "BungeeCord", out.toByteArray());
         }
         else
             throw new RuntimeException("Tried to connect offline player!");
@@ -273,6 +279,16 @@ public class GameCustomPlayer implements CustomPlayer{
     @Override
     public void setUpgradeString(String game, String upgrade) {
         Database.getTable("PlayerUpgrades").updatePropertyForName(name, game, upgrade);
+    }
+
+    @Override
+    public String getSelectedGadget() {
+        return Database.getTable("PlayerData").getPropertyForName(name, "Gadget");
+    }
+
+    @Override
+    public void setSelectedGadget(String gadget) {
+        Database.getTable("PlayerData").updatePropertyForName(name, "Gadget", gadget);
     }
 
     public boolean isOnline(){

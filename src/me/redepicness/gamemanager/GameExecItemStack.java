@@ -10,8 +10,9 @@ public class GameExecItemStack implements ExecItemStack{
 
     private ItemStack itemStack;
     private Consumer<Player> onExecute;
+    private int position;
 
-    public GameExecItemStack(ItemStack itemStack, Consumer<Player> onExecute) {
+    public GameExecItemStack(ItemStack itemStack, int position, Consumer<Player> onExecute) {
         this.itemStack = itemStack;
         this.onExecute = onExecute;
     }
@@ -20,10 +21,10 @@ public class GameExecItemStack implements ExecItemStack{
         onExecute.accept(player);
     }
 
-    public boolean isOrigin(ItemStack itemStack){
-        return this.itemStack.getType().equals(itemStack.getType())&&
-                ((!(this.itemStack.hasItemMeta() && itemStack.hasItemMeta()))
-                        || this.itemStack.getItemMeta().getDisplayName().equals(itemStack.getItemMeta().getDisplayName())) ;
+    public boolean isOrigin(ItemStack itemStack) {
+        return itemStack != null && this.itemStack.getType().equals(itemStack.getType()) &&
+                ((!(this.itemStack.hasItemMeta() && itemStack.hasItemMeta())) ||
+                        this.itemStack.getItemMeta().getDisplayName().equals(itemStack.getItemMeta().getDisplayName()));
     }
 
     public ItemStack getStack() {
@@ -32,5 +33,10 @@ public class GameExecItemStack implements ExecItemStack{
 
     public void setStack(ItemStack itemStack) {
         this.itemStack = itemStack;
+    }
+
+    @Override
+    public int getPosition() {
+        return position;
     }
 }

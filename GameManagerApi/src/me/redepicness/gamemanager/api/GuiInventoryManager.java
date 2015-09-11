@@ -13,8 +13,8 @@ public interface GuiInventoryManager {
 
     GuiInventory generateNewInventory(String id, String name, int rows);
 
-    void createServerStatusInventory(String id, String title, String... filters);
-
     ExecItemStack getItemStack(ItemStack stack, Consumer<Player> onExecute);
+
+    ExecItemStack getItemStack(ItemStack stack, int position, Consumer<Player> onExecute);
 
 }

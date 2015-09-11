@@ -2,6 +2,7 @@ package me.redepicness.gamemanager;
 
 import me.redepicness.gamemanager.api.*;
 import me.redepicness.gamemanager.api.GameManager.GameManagerType;
+import me.redepicness.gamemanager.api.Util;
 import me.redepicness.gamemanager.api.Utility;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -27,12 +28,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class GManager extends JavaPlugin implements Listener{
 
-    private static GManager instance;
     private boolean initialized = false;
-
-    public static GManager getInstance() {
-        return instance;
-    }
 
     @Override
     public void onDisable() {
@@ -45,12 +41,11 @@ public class GManager extends JavaPlugin implements Listener{
 
     @Override
     public void onEnable() {
-        instance = this;
         Database.init();
-        Bukkit.getMessenger().registerOutgoingPluginChannel(GManager.getInstance(), "BungeeCord");
+        Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
         getServer().getPluginManager().registerEvents(this, this);
-        Utility.setManagers(new GPlayerManager(), new GameInvManager(), new GameBlockGenerator(), new GameScoreboardManager(),
-                new GameServerStatus.ServerStatusApi(), new GCubeManager());
+        Util.setManagers(new GPlayerManager(), new GameInvManager(), new GameBlockGenerator(), new GameScoreboardManager(), new GCubeManager());
+        Utility.setManagers(new GPlayerManager(), new GameInvManager(), new GameBlockGenerator(), new GameScoreboardManager(), new GCubeManager());
         Bukkit.getScheduler().scheduleAsyncDelayedTask(this, () -> {
             System.out.println("Initializing GameManager!");
             if (Manager.getGameManager() == null) {
@@ -66,106 +61,75 @@ public class GManager extends JavaPlugin implements Listener{
 
     @EventHandler(priority = EventPriority.LOW)
     public void join(PlayerJoinEvent e) {
+        Player p = e.getPlayer();
         if(!initialized){
-            e.getPlayer().kickPlayer(ChatColor.RED+"The server is initializing!");
+            p.kickPlayer(ChatColor.RED + "The server is initializing!");
             return;
         }
         e.setJoinMessage(null);
-        CustomPlayer player = Utility.getPlayer(e.getPlayer().getName());
-        Utility.getScoreboardManager().updateStaff();
+        CustomPlayer player = Util.getPlayer(p.getName());
+        Util.getScoreboardManager().updateStaff();
         if (player.hasPermission(Rank.ADMIN)) {
-            player.getBukkitPlayer().setOp(true);
+            p.setOp(true);
         } else {
-            player.getBukkitPlayer().setOp(false);
+            p.setOp(false);
         }
         if(Manager.isNoManagerMode()) return;
-        e.getPlayer().teleport(Manager.getGameManager().getLobbyLocation());
+        p.teleport(Manager.getLobbyLoc());
         if(player.isVanished()){
-            player.getBukkitPlayer().setGameMode(GameMode.SPECTATOR);
-            if (Manager.getGameManager().getType().equals(GameManagerType.GAME)) {
-                for(String p : Manager.getGameManager().getGame().getPlayers()){
-                    Bukkit.getPlayerExact(p).hidePlayer(player.getBukkitPlayer());
-                }
-                Game game = Manager.getGameManager().getGame();
-                game.gameLeave(player.getBukkitPlayer().getPlayer());
-            }
-            else{
-                for(Player p : Bukkit.getOnlinePlayers()){
-                    p.hidePlayer(player.getBukkitPlayer());
+            p.setGameMode(GameMode.SPECTATOR);
+            for(Player p1 : Bukkit.getOnlinePlayers()){
+                CustomPlayer player1 = Util.getPlayer(p1);
+                if(!player1.hasPermission(Rank.MODERATOR)){
+                    p1.hidePlayer(p);
                 }
             }
             player.message(ChatColor.GREEN + "You are vanished!");
             return;
         } else {
-            for(Player p : Bukkit.getOnlinePlayers()){
-                CustomPlayer player1 = Utility.getPlayer(p);
-                if(player1.isVanished()){
-                    player.getBukkitPlayer().hidePlayer(p);
+            for(Player p1 : Bukkit.getOnlinePlayers()){
+                CustomPlayer player1 = Util.getPlayer(p1);
+                if(player1.isVanished() && !player.hasPermission(Rank.MODERATOR)){
+                    p.hidePlayer(p1);
                 }
             }
         }
-        if (Manager.getGameManager().getType().equals(GameManagerType.GAME)) {
-            Game game = Manager.getGameManager().getGame();
+        if (Manager.isType(GameManagerType.GAME)) {
+            Game game = Manager.getGame();
             if(!game.isJoinable()){
-                e.getPlayer().kickPlayer(ChatColor.RED+game.cannotJoinReason());
+                p.kickPlayer(ChatColor.RED + game.cannotJoinReason());
             }
             else if(game.getPlayerCount() >= game.getMaxPlayers()){
-                e.getPlayer().kickPlayer(ChatColor.RED+"The game is full!");
+                p.kickPlayer(ChatColor.RED + "The game is full!");
             }
             else{
-                game.gameJoin(e.getPlayer());
+                game.gameJoin(p);
             }
         }
         else{
             if(player.isFlying()){
-                player.getBukkitPlayer().setAllowFlight(true);
+                player.message(ChatColor.GREEN+"You are flying!");
+                p.setAllowFlight(true);
             }
         }
-        Manager.getGameManager().playerJoin(player.getBukkitPlayer());
+        Manager.getGameManager().playerJoin(p);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void leave(PlayerQuitEvent e) {
+        Player p = e.getPlayer();
         e.setQuitMessage(null);
-        if(Manager.isNoManagerMode()){
-            if (Manager.getGameManager().getType().equals(GameManagerType.GAME) && !Utility.getPlayer(e.getPlayer()).isVanished()) {
-                Manager.getGameManager().getGame().gameLeave(e.getPlayer());
-            }
-        }
-        GPlayerManager.uncache(e.getPlayer().getName());
-    }
-
-    @EventHandler
-    public void sign(SignChangeEvent e) {
-        if(e.getLine(0).equals("HUB")){
-            e.setLine(0, "");
-            e.setLine(1, ChatColor.GREEN + "Click here to");
-            e.setLine(2, ChatColor.GREEN + "return to hub");
-            e.setLine(3, "");
-        }
-    }
-
-    @EventHandler
-    public void onClick(PlayerInteractEvent e) {
-        if (e.getAction().equals(Action.RIGHT_CLICK_BLOCK) && e.getClickedBlock().getType().toString().toLowerCase().contains("sign")) {
-            if(((Sign) e.getClickedBlock().getState()).getLine(2).equals(ChatColor.GREEN+"return to hub")){
-                if(!Manager.isNoManagerMode()){
-                    Connector.connect(e.getPlayer(), Manager.getGameManager().hubServerName());
-                }
-                else{
-                    Connector.connect(e.getPlayer(), "LOBBY_1");
-                }
-            }
-            if(((Sign) e.getClickedBlock().getState()).getLine(3).equals(ChatColor.GREEN + "Click to join")){
-                Connector.connect(e.getPlayer(), ((Sign) e.getClickedBlock().getState()).getLine(0));
-            }
+        GPlayerManager.uncache(p.getName());
+        if(Manager.isNoManagerMode()) return;
+        if (Manager.isType(GameManagerType.GAME) && Manager.getGame().isInArena(p.getName())) {
+            Manager.getGame().gameLeave(p);
         }
     }
 
     @EventHandler
     public void onPing(ServerListPingEvent e){
         if(!initialized){
-            e.setMotd("NULL::NULL::NULL::NULL:NULL");
+            e.setMotd("NULL::false::The server is still Initializing!::NULL:NULL");
             return;
         }
         if(Manager.isNoManagerMode()) {
@@ -177,12 +141,11 @@ public class GManager extends JavaPlugin implements Listener{
         String reason = "NULL";
         String sign = "";
         boolean join = true;
-        if(Bukkit.getOnlinePlayers().size() >= Bukkit.getMaxPlayers()) join = false;
-        if(Manager.getGameManager().getType().equals(GameManagerType.GAME)){
+        if(Manager.isType(GameManagerType.GAME)){
             Game game = Manager.getGameManager().getGame();
             if(!game.isJoinable()){
                 join = false;
-                reason = Manager.getGameManager().getGame().cannotJoinReason();
+                reason = Manager.getGame().cannotJoinReason();
                 sign = game.getPlayerCount() + "/" + game.getMaxPlayers()+":"+
                         game.getStage().toText();
             }
@@ -193,28 +156,31 @@ public class GManager extends JavaPlugin implements Listener{
 
     @EventHandler
     public void blockBreak(BlockBreakEvent e){
-        if(!e.getPlayer().getGameMode().equals(GameMode.CREATIVE)){
+        if(Manager.isNoManagerMode()) return;
+        if(!e.getPlayer().getGameMode().equals(GameMode.CREATIVE) && Manager.isType(GameManagerType.LOBBY)){
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void blockBreak(BlockPlaceEvent e){
-        if(!e.getPlayer().getGameMode().equals(GameMode.CREATIVE)){
+        if(Manager.isNoManagerMode()) return;
+        if(!e.getPlayer().getGameMode().equals(GameMode.CREATIVE) && Manager.isType(GameManagerType.LOBBY)){
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void damage(EntityDamageEvent e){
-        if(Manager.getGameManager().getType().equals(GameManagerType.LOBBY)){
+        if(Manager.isNoManagerMode()) return;
+        if(Manager.isType(GameManagerType.LOBBY)){
             e.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onChat(AsyncPlayerChatEvent e){
-        CustomPlayer p = Utility.getPlayer(e.getPlayer());
+        CustomPlayer p = Util.getPlayer(e.getPlayer());
         e.setCancelled(true);
         Bukkit.broadcastMessage(p.getFormattedName() + ChatColor.GRAY + ": " + ChatColor.RESET + e.getMessage());
     }
@@ -222,8 +188,8 @@ public class GManager extends JavaPlugin implements Listener{
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if(command.getName().equals("fly")){
-            if(!Manager.getGameManager().getType().equals(GameManagerType.LOBBY)) return false;
-            CustomPlayer player = Utility.getPlayer(sender.getName());
+            if(!Manager.isType(GameManagerType.LOBBY)) return false;
+            CustomPlayer player = Util.getPlayer(sender.getName());
             if(!player.hasPermission(true, Rank.ACE)) return true;
             boolean flying = player.isFlying();
             if(flying){
@@ -238,7 +204,7 @@ public class GManager extends JavaPlugin implements Listener{
             return true;
         }
         if(!command.getName().equals("v")) return false;
-        CustomPlayer player = Utility.getPlayer(sender.getName());
+        CustomPlayer player = Util.getPlayer(sender.getName());
         if(!player.hasPermission(true, Rank.MODERATOR)) return true;
         boolean vanished = player.isVanished();
         if(vanished){
@@ -263,6 +229,9 @@ public class GManager extends JavaPlugin implements Listener{
                     p.showPlayer(player.getBukkitPlayer());
                 }
             }
+            if(player.isFlying()){
+                player.getBukkitPlayer().setAllowFlight(true);
+            }
             player.message(ChatColor.GREEN+"You have unvanished!");
         }
         else{
@@ -276,7 +245,10 @@ public class GManager extends JavaPlugin implements Listener{
             }
             else{
                 for(Player p : Bukkit.getOnlinePlayers()){
-                    p.hidePlayer(player.getBukkitPlayer());
+                    CustomPlayer player1 = Util.getPlayer(p);
+                    if(!player1.hasPermission(Rank.MODERATOR)){
+                        p.hidePlayer(player.getBukkitPlayer());
+                    }
                 }
             }
             player.message(ChatColor.GREEN + "You have vanished!");

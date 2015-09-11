@@ -1,6 +1,7 @@
 package me.redepicness.gamemanager;
 
 import me.redepicness.gamemanager.api.BlockGenerator;
+import me.redepicness.gamemanager.api.Manager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -56,9 +57,9 @@ public class GameBlockGenerator implements BlockGenerator{
         }
         scheduleBlocks(toPlace, delay);
         if(runnable != null){
-            Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), runnable::run, delay+20);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(Manager.getPlugin("GameManager"), runnable::run, delay+20);
         }
-        Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), postTask::run, delay+40);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Manager.getPlugin("GameManager"), postTask::run, delay+40);
     }
 
     private void scheduleBlocks(Map<Location, Material> map, int delay){
@@ -66,7 +67,7 @@ public class GameBlockGenerator implements BlockGenerator{
         for (Entry<Location, Material> e : map.entrySet()) {
             fin.put(e.getKey(), e.getValue());
         }
-        Bukkit.getScheduler().scheduleSyncDelayedTask(GManager.getInstance(), () -> {
+        Bukkit.getScheduler().scheduleSyncDelayedTask(Manager.getPlugin("GameManager"), () -> {
             for (Entry<Location, Material> e : fin.entrySet()) {
                 e.getKey().getBlock().setType(e.getValue());
             }

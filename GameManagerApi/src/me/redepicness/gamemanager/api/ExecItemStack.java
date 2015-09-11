@@ -36,4 +36,6 @@ public interface ExecItemStack {
      */
     void setStack(ItemStack itemStack);
 
+    int getPosition();
+
 }

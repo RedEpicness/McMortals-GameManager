@@ -10,7 +10,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Arrays;
 
-public class Utility {
+public class Util {
 
     private static boolean set = false;
     private static GuiInventoryManager guiInventoryManager = null;
@@ -82,6 +82,14 @@ public class Utility {
 
     public static Location makeLocation(double x, double y, double z, float yaw, float pitch){
         return new Location(getWorld(), x, y, z, yaw, pitch);
+    }
+
+    public static Location makeLocation(String world, double x, double y, double z){
+        return new Location(Bukkit.getWorld(world), x, y, z);
+    }
+
+    public static Location makeLocation(String world, double x, double y, double z, float yaw, float pitch){
+        return new Location(Bukkit.getWorld(world), x, y, z, yaw, pitch);
     }
 
 }

@@ -8,14 +8,6 @@ public abstract class GameManager<A extends Game> implements Listener {
 
     private Game game;
 
-    public String gameServerName(){
-        return "HUB_";
-    }
-
-    public String hubServerName(){
-        return "HUB_1";
-    }
-
     public void init(){
         if(getType().equals(GameManagerType.GAME)){
             game = registerGame();

@@ -2,12 +2,15 @@ package me.redepicness.gamemanager;
 
 import me.redepicness.gamemanager.api.ExecItemStack;
 import me.redepicness.gamemanager.api.GuiInventoryManager;
+import me.redepicness.gamemanager.api.Util;
 import me.redepicness.gamemanager.api.Utility;
+import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.Consumer;
 
@@ -21,6 +24,7 @@ public class GameInvManager implements GuiInventoryManager{
 
     @Override
     public void removeById(String id) {
+        HandlerList.unregisterAll(idToGui.get(id));
         idToGui.remove(id);
     }
 
@@ -30,20 +34,13 @@ public class GameInvManager implements GuiInventoryManager{
     }
 
     @Override
-    public void createServerStatusInventory(String id, String title, String... filters) {
-        GameGuiInventory inventory = generateNewInventory(id, title, 1);
-        inventory.addItemStacks(
-                new int[]{0},
-                new GameExecItemStack[]{
-                        new GameExecItemStack(Utility.makeItemStack(Material.REDSTONE_BLOCK, 0, ChatColor.RED + "Loading servers..."), Player::closeInventory)
-                }
-        );
-        GameServerStatusManager.serverWait(id, filters);
+    public ExecItemStack getItemStack(ItemStack stack, Consumer<Player> onExecute) {
+        return new GameExecItemStack(stack, -1, onExecute);
     }
 
     @Override
-    public ExecItemStack getItemStack(ItemStack stack, Consumer<Player> onExecute) {
-        return new GameExecItemStack(stack, onExecute);
+    public ExecItemStack getItemStack(ItemStack stack, int position, Consumer<Player> onExecute) {
+        return new GameExecItemStack(stack, position, onExecute);
     }
 
 }
