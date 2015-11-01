@@ -14,6 +14,7 @@ public class GameExecItemStack implements ExecItemStack{
 
     public GameExecItemStack(ItemStack itemStack, int position, Consumer<Player> onExecute) {
         this.itemStack = itemStack;
+        this.position = position;
         this.onExecute = onExecute;
     }
 

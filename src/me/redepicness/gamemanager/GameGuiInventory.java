@@ -51,7 +51,13 @@ public class GameGuiInventory implements Listener, GuiInventory{
 
     public void addItemStacks(int[] positions, ExecItemStack[] execItemStacks){
         addItemStacks(new ArrayList<ExecItemStack>(){{
-            new GameExecItemStack(Util.makeItemStack(Material.REDSTONE_BLOCK, ChatColor.RED+"Depracated API usage, use new add ItemStacks method!"), -1, p -> {});
+            add(new GameExecItemStack(
+                    Util.makeItemStack(
+                        Material.REDSTONE_BLOCK,
+                        ChatColor.RED+"Depracated API usage, use new add ItemStacks method!"),
+                    -1,
+                    p -> {}
+            ));
         }});
     }
 
